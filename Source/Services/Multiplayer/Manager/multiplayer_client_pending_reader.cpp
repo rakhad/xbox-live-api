@@ -317,6 +317,20 @@ multiplayer_client_pending_reader::set_synchronized_properties(
     return xbox_live_result<void>();
 }
 
+xbox_live_result<void>
+multiplayer_client_pending_reader::set_server_connection_string(
+    _In_ multiplayer_session_reference sessionRef,
+    _In_ string_t connectionString,
+    _In_opt_ context_t context
+    )
+{
+    auto pendingRequest = std::make_shared<multiplayer_client_pending_request>();
+    pendingRequest->set_server_connection_string(connectionString, context);
+    add_to_pending_queue(sessionRef, pendingRequest);
+
+    return xbox_live_result<void>();
+}
+
 void
 multiplayer_client_pending_reader::add_to_pending_queue(
     _In_ multiplayer_session_reference sessionRef,
@@ -429,7 +443,8 @@ xbox_live_result<void>
 multiplayer_client_pending_reader::find_match(
     _In_ const string_t& hopperName,
     _In_ const web::json::value& attributes,
-    _In_ const std::chrono::seconds& timeout
+    _In_ const std::chrono::seconds& timeout,
+    _In_opt_ bool useSymmetricTickets
     )
 {
     RETURN_CPP_IF(!m_autoFillMembers && m_gameClient->session() != nullptr, void, xbox_live_error_code::logic_error, "A game already exists. Call leave_game() before you can start matchmaking.");
@@ -437,10 +452,10 @@ multiplayer_client_pending_reader::find_match(
 
     if (m_autoFillMembers && m_gameClient->session() != nullptr)
     {
-        return m_matchClient->find_match(hopperName, attributes, timeout, m_gameClient->session(), true);
+        return m_matchClient->find_match(hopperName, attributes, timeout, m_gameClient->session(), true, useSymmetricTickets);
     }
 
-    return m_matchClient->find_match(hopperName, attributes, timeout, m_lobbyClient->session(), false);
+    return m_matchClient->find_match(hopperName, attributes, timeout, m_lobbyClient->session(), false, useSymmetricTickets);
 }
 
 void

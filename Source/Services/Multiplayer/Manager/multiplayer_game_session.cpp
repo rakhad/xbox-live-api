@@ -32,6 +32,8 @@ void multiplayer_game_session::deep_copy_from(
     m_multiplayerClientManager = other.m_multiplayerClientManager;
     m_teams = other.m_teams;
     m_tournamentTeamResults = other.m_tournamentTeamResults;
+    m_serverConnectionStringCandidates = other.m_serverConnectionStringCandidates;
+    m_serverConnectionString = other.m_serverConnectionString;
 }
 
 multiplayer_game_session::multiplayer_game_session():
@@ -52,7 +54,9 @@ multiplayer_game_session::multiplayer_game_session(
     m_properties(session->session_properties()->session_custom_properties_json()),
     m_sessionConstants(session->session_constants()),
     m_teams(session->tournaments_server().teams()),
-    m_tournamentTeamResults(session->arbitration_server().results())
+    m_tournamentTeamResults(session->arbitration_server().results()),
+    m_serverConnectionStringCandidates(session->session_properties()->server_connection_string_candidates()),
+    m_serverConnectionString(session->session_properties()->matchmaking_server_connection_string())
 {
 }
 
@@ -128,6 +132,40 @@ multiplayer_game_session::set_properties(
     RETURN_EXCEPTION_FREE_XBOX_LIVE_RESULT(m_multiplayerClientManager->set_properties(m_sessionReference, name, valueJson, context), void);
 }
 
+xbox_live_result<void>
+multiplayer_game_session::set_local_member_properties(
+    _In_ xbox_live_user_t user,
+    _In_ const string_t& name,
+    _In_ const web::json::value& valueJson,
+    _In_opt_ context_t context
+    )
+{
+    RETURN_CPP_IF(m_multiplayerClientManager->latest_pending_read() == nullptr, void, xbox_live_error_code::logic_error, "No user added. Call add_local_user() first.");
+    RETURN_EXCEPTION_FREE_XBOX_LIVE_RESULT(m_multiplayerClientManager->game_client()->set_local_member_properties(user, std::move(name), std::move(valueJson), context), void);
+}
+
+xbox_live_result<void>
+multiplayer_game_session::set_local_member_groups(
+    _In_ xbox_live_user_t user,
+    _In_ const std::vector<string_t>& groups,
+    _In_opt_ context_t context
+)
+{
+    RETURN_CPP_IF(m_multiplayerClientManager->latest_pending_read() == nullptr, void, xbox_live_error_code::logic_error, "No user added. Call add_local_user() first.");
+    RETURN_EXCEPTION_FREE_XBOX_LIVE_RESULT(m_multiplayerClientManager->game_client()->set_local_member_groups(user, groups, context), void);
+}
+
+xbox_live_result<void>
+multiplayer_game_session::set_local_member_server_qos_measurements(
+    _In_ xbox_live_user_t user,
+    _In_ const web::json::value& valueJson,
+    _In_opt_ context_t context
+)
+{
+    RETURN_CPP_IF(m_multiplayerClientManager->latest_pending_read() == nullptr, void, xbox_live_error_code::logic_error, "No user added. Call add_local_user() first.");
+    RETURN_EXCEPTION_FREE_XBOX_LIVE_RESULT(m_multiplayerClientManager->game_client()->set_local_member_server_qos_measurements(user, valueJson, context), void);
+}
+
 bool
 multiplayer_game_session::is_host( 
     _In_ const string_t& xboxUserId
@@ -160,6 +198,28 @@ multiplayer_game_session::set_synchronized_properties(
     )
 {
     RETURN_EXCEPTION_FREE_XBOX_LIVE_RESULT(m_multiplayerClientManager->set_synchronized_properties(m_sessionReference, name, valueJson, context), void);
+}
+
+xbox_live_result<void> multiplayer_game_session::set_server_connection_string(
+    _In_ const string_t& serverConnectionString,
+    _In_opt_ context_t context
+    )
+{
+    RETURN_EXCEPTION_FREE_XBOX_LIVE_RESULT(m_multiplayerClientManager->set_server_connection_string(m_sessionReference, serverConnectionString, context), void);
+}
+
+const std::vector<string_t>& 
+multiplayer_game_session::server_connection_string_candidates(
+    ) const
+{
+    return m_serverConnectionStringCandidates;
+}
+
+const string_t& 
+multiplayer_game_session::matchmaking_server_connection_string(
+    ) const
+{
+    return m_serverConnectionString;
 }
 
 void

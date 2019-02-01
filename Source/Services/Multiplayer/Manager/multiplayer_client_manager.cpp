@@ -188,6 +188,24 @@ multiplayer_client_manager::set_synchronized_properties(
     return xbox_live_result<void>();
 }
 
+xbox_live_result<void>
+multiplayer_client_manager::set_server_connection_string(
+    _In_ const multiplayer_session_reference& sessionRef,
+    _In_ const string_t& connectionString,
+    _In_opt_ context_t context
+    )
+{
+    // Note: sessionRef can be empty for the lobby initially as we may have not created one yet.
+    RETURN_CPP_IF(connectionString.empty(), void, xbox_live_error_code::invalid_argument, "connectionString was empty");
+
+    std::lock_guard<std::mutex> guard(m_clientRequestLock);
+    auto latestPending = latest_pending_read();
+    RETURN_CPP_IF(latestPending == nullptr || get_xbox_live_context_map().size() == 0, void, xbox_live_error_code::logic_error, "Call add_local_user() before writing lobby properties.");
+
+    latestPending->set_server_connection_string(sessionRef, connectionString, context);
+    return xbox_live_result<void>();
+}
+
 void
 multiplayer_client_manager::synchronized_write_completed(
     _In_ std::error_code errorCode,
@@ -620,7 +638,13 @@ multiplayer_client_manager::last_pending_read() const
 std::shared_ptr<multiplayer_lobby_client>
 multiplayer_client_manager::lobby_client() const
 {
-    return m_latestPendingRead->lobby_client();
+    auto latestPendingRead = latest_pending_read();
+    if (latestPendingRead == nullptr)
+    {
+        return nullptr;
+    }
+
+    return latestPendingRead->lobby_client();
 }
 
 bool
@@ -1231,16 +1255,29 @@ multiplayer_client_manager::match_client()
     return latestPendingRead->match_client();
 }
 
+std::shared_ptr<multiplayer_game_client>
+multiplayer_client_manager::game_client()
+{
+    auto latestPendingRead = latest_pending_read();
+    if (latestPendingRead == nullptr)
+    {
+        return nullptr;
+    }
+
+    return latestPendingRead->game_client();
+}
+
 xbox_live_result<void>
 multiplayer_client_manager::find_match(
     _In_ const string_t& hopperName,
     _In_ const web::json::value& attributes,
-    _In_ const std::chrono::seconds& timeout
+    _In_ const std::chrono::seconds& timeout,
+    bool useSymmetricTickets
 )
 {
     auto latestPendingRead = latest_pending_read();
     RETURN_CPP_IF(latestPendingRead == nullptr || latestPendingRead->lobby_client()->session() == nullptr, void, xbox_live_error_code::logic_error, "No local user added. Call add_local_user() first.");
-    return latestPendingRead->find_match(hopperName, attributes, timeout);
+    return latestPendingRead->find_match(hopperName, attributes, timeout, useSymmetricTickets);
 }
 
 void

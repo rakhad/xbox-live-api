@@ -149,6 +149,11 @@ public:
     DEFINE_PTR_PROP_GET_STR_OBJ(TeamId, team_id);
 
     /// <summary>
+    /// The initial team suggestion from SmartMatch - use groups to change teams
+    /// </summary>
+    DEFINE_PTR_PROP_GET_STR_OBJ(InitialTeam, initial_team);
+
+    /// <summary>
     /// The Xbox User ID of the member.  This value is only known if the member has accepted.
     /// </summary>
     DEFINE_PTR_PROP_GET_STR_OBJ(XboxUserId, xbox_user_id);

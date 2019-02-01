@@ -112,6 +112,65 @@ MultiplayerGameSession::SetProperties(
 }
 
 void
+MultiplayerGameSession::SetLocalMemberProperties(
+    _In_ XboxLiveUser_t user,
+    _In_ Platform::String^ name,
+    _In_opt_ Platform::String^ valueJson,
+    _In_opt_ context_t context
+    )
+{
+    THROW_INVALIDARGUMENT_IF_NULL(user);
+
+    auto valueJsonString = UtilsWinRT::JsonValueFromPlatformString(valueJson);
+    auto result = m_cppObj->set_local_member_properties(
+        user_context::user_convert(user),
+        STRING_T_FROM_PLATFORM_STRING(name),
+        valueJsonString,
+        context
+    );
+
+    THROW_IF_ERR(result);
+}
+
+void
+MultiplayerGameSession::SetLocalMemberGroups(
+    _In_ XboxLiveUser_t user,
+    _In_ Windows::Foundation::Collections::IVectorView<Platform::String ^>^ Groups,
+    _In_opt_ context_t context
+    )
+{
+    THROW_INVALIDARGUMENT_IF_NULL(user);
+
+    auto groupsVector = UtilsWinRT::CovertVectorViewToStdVectorString(Groups);
+    auto result = m_cppObj->set_local_member_groups(
+        user_context::user_convert(user),
+        groupsVector,
+        context
+    );
+
+    THROW_IF_ERR(result);
+}
+
+void
+MultiplayerGameSession::SetLocalMemberServerQoSMeasurements(
+    _In_ XboxLiveUser_t user,
+    _In_ Platform::String^ jsonValueString,
+    _In_opt_ context_t context
+)
+{
+    THROW_INVALIDARGUMENT_IF_NULL(user);
+
+    auto jsonValue = UtilsWinRT::JsonValueFromPlatformString(jsonValueString);
+    auto result = m_cppObj->set_local_member_server_qos_measurements(
+        user_context::user_convert(user),
+        jsonValue,
+        context
+	);
+
+    THROW_IF_ERR(result);
+}
+
+void
 MultiplayerGameSession::SetSynchronizedProperties( 
     _In_ Platform::String^ name,
     _In_opt_ Platform::String^ valueJson,
@@ -138,6 +197,12 @@ MultiplayerGameSession::SetSynchronizedHost(
 
     auto result = m_cppObj->set_synchronized_host(gameHost->GetCppObj(), context);
     THROW_IF_ERR(result);
+}
+
+Windows::Foundation::Collections::IVector<Platform::String^>^
+MultiplayerGameSession::ServerConnectionCandidates::get()
+{
+    return UtilsWinRT::CreatePlatformVectorFromStdVectorString(m_cppObj->server_connection_string_candidates());
 }
 
 NAMESPACE_MICROSOFT_XBOX_SERVICES_MULTIPLAYER_MANAGER_END

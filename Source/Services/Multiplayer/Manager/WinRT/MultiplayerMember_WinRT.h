@@ -25,6 +25,12 @@ public:
     DEFINE_PTR_PROP_GET_STR_OBJ(TeamId, team_id);
 
     /// <summary>
+    /// Only applicable if you are using the Team rule in Smart Match.
+    /// Suggested initial team assignment from Smart Match.
+    /// </summary>
+    DEFINE_PTR_PROP_GET_STR_OBJ(InitialTeam, initial_team);
+
+    /// <summary>
     /// Xbox User ID of the member.
     /// </summary>
     DEFINE_PTR_PROP_GET_STR_OBJ(XboxUserId, xbox_user_id);

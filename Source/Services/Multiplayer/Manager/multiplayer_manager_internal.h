@@ -98,6 +98,20 @@ public:
         _In_opt_ context_t context
         );
 
+    const std::vector<string_t>& local_user_groups() const;
+    void set_local_user_groups(
+        _In_ std::shared_ptr<multiplayer_local_user> localUser,
+        _In_ const std::vector<string_t>& groups,
+        _In_opt_ context_t context
+        );
+
+    const web::json::value& local_user_server_qos_measurements() const;
+    void set_local_user_server_qos_measurements(
+        _In_ std::shared_ptr<multiplayer_local_user> localUser,
+        _In_ const web::json::value& jsonValue,
+        _In_opt_ context_t context
+        );
+
     // Session non-synchronized properties
     multiplayer::manager::joinability joinability();
     void set_joinability(_In_ xbox::services::multiplayer::manager::joinability value, _In_opt_ context_t context);
@@ -111,6 +125,9 @@ public:
 
     const std::map<string_t, web::json::value>& synchronized_session_properties() const;
     void set_synchronized_session_properties(_In_ string_t name, _In_ web::json::value valueJson, _In_opt_ context_t context);
+
+    const string_t& server_connection_string() const;
+    void set_server_connection_string(_In_ string_t connectionString, _In_opt_ context_t context);
 
     void append_pending_changes(
         _In_ std::shared_ptr<xbox::services::multiplayer::multiplayer_session> sessionToCommit, 
@@ -128,6 +145,8 @@ private:
     std::shared_ptr<multiplayer_local_user> m_localUser;
     multiplayer_local_user_lobby_state m_localUserLobbyState;
     std::map<string_t, web::json::value> m_localUserProperties;
+    std::vector<string_t> m_localUserGroups;
+    web::json::value m_localUserServerQoSMeasurements;
     string_t m_localUserConnectionAddress;
     string_t m_lobbyHandleId;   // Only used while joining a friend's lobby
     xbox::services::multiplayer::multiplayer_session_reference m_teamSessionRef;   // Only used for Tournament MPM integration support.
@@ -139,6 +158,7 @@ private:
     // Session synchronized properties
     string_t m_synchronizedHostDeviceToken;
     std::map<string_t, web::json::value> m_synchronizedSessionProperties;
+    string_t m_serverConnectionString;
 };
 
 
@@ -306,6 +326,25 @@ public:
         _In_ const string_t& localUserConnectionAddress
         );
 
+    xbox_live_result<void> set_local_member_properties(
+        _In_ xbox_live_user_t user,
+        _In_ string_t name,
+        _In_ web::json::value valueJson,
+        _In_opt_ context_t context
+        );
+
+    xbox_live_result<void> set_local_member_server_qos_measurements(
+        _In_ xbox_live_user_t user,
+        _In_ const web::json::value& valueJson,
+        _In_opt_ context_t context
+        );
+
+    xbox_live_result<void> set_local_member_groups(
+        _In_ xbox_live_user_t user,
+        _In_ const std::vector<string_t>& groups,
+        _In_opt_ context_t context
+        );
+
     xbox_live_result<void> join_game_helper(
         _In_ const string_t& sessionName
         );
@@ -418,6 +457,18 @@ public:
         _In_ xbox_live_user_t user,
         _In_ string_t name,
         _In_ web::json::value valueJson,
+        _In_opt_ context_t context
+        );
+
+    xbox_live_result<void> set_local_member_groups(
+        _In_ xbox_live_user_t user,
+        _In_ const std::vector<string_t>& groups,
+        _In_opt_ context_t context
+        );
+
+    xbox_live_result<void> set_local_member_server_qos_measurements(
+        _In_ xbox_live_user_t user,
+        _In_ const web::json::value& valueJson,
         _In_opt_ context_t context
         );
 
@@ -610,7 +661,8 @@ public:
     xbox_live_result<void> find_match(
         _In_ const string_t& hopperName,
         _In_ const web::json::value& attributes,
-        _In_ const std::chrono::seconds& timeout
+        _In_ const std::chrono::seconds& timeout,
+        _In_opt_ bool useSymmetricTickets
         );
 
     void set_auto_fill_members_during_matchmaking(_In_ bool autoFillMembers);
@@ -631,6 +683,12 @@ public:
         _In_ xbox::services::multiplayer::multiplayer_session_reference sessionRef,
         _In_ string_t name,
         _In_ web::json::value valueJson,
+        _In_opt_ context_t context
+        );
+
+    xbox_live_result<void> set_server_connection_string(
+        _In_ xbox::services::multiplayer::multiplayer_session_reference sessionRef,
+        _In_ string_t connectionString,
         _In_opt_ context_t context
         );
 
@@ -890,12 +948,20 @@ public:
         _In_opt_ context_t context
         );
 
+    xbox_live_result<void> set_server_connection_string(
+        _In_ const xbox::services::multiplayer::multiplayer_session_reference& sessionRef,
+        _In_ const string_t& connectionString,
+        _In_opt_ context_t context
+        );
+
     std::shared_ptr<multiplayer_match_client> match_client();
+    std::shared_ptr<multiplayer_game_client> game_client();
 
     xbox_live_result<void> find_match(
         _In_ const string_t& hopperName,
         _In_ const web::json::value& attributes,
-        _In_ const std::chrono::seconds& timeout
+        _In_ const std::chrono::seconds& timeout,
+        _In_opt_ bool useSymmetricTickets
         );
 
     void set_auto_fill_members_during_matchmaking(_In_ bool autoFillMembers);
@@ -1043,7 +1109,8 @@ public:
         _In_ const web::json::value& attributes,
         _In_ const std::chrono::seconds& timeout,
         _In_ std::shared_ptr<xbox::services::multiplayer::multiplayer_session> session,
-        _In_ bool preserveSession = false
+        _In_ bool preserveSession = false,
+        _In_opt_ bool useSymmetricTickets = false
         );
 
     xbox_live_result<void> find_match(
@@ -1109,6 +1176,7 @@ private:
     web::json::value m_attributes;
     std::chrono::seconds m_timeout;
     bool m_preservingMatchmakingSession;
+    bool m_useSymmetricTickets;
     std::atomic<xbox::services::multiplayer::manager::match_status> m_matchStatus;
     mutable std::mutex m_multiplayerEventQueueLock;
     std::vector<multiplayer_event> m_multiplayerEventQueue;
